@@ -27,13 +27,14 @@ def requires_arguments(arguments):
         return inner
     return wrapper
 
+
 def requires_join(func):
     """
     Can be put on a handler to indicate that it must be joined to a game before
     running.
     """
 
-    def inner(self, payload):
+    def inner(self, payload):  # pylint: disable=missing-docstring
         if self.game is None:
             self.send_error("You aren't connected to a game")
             return
@@ -85,7 +86,9 @@ class DeckrProtocol(Protocol):
         try:
             getattr(self, 'handle_' + message_type)(payload)
         except AttributeError:
-            self.send_error("Invalid message type: %s" % payload['message_type'])
+            self.send_error(
+                "Invalid message type: %s" %
+                payload['message_type'])
 
     def handle_list(self, _):
         """
@@ -152,7 +155,7 @@ class DeckrProtocol(Protocol):
         self.send('join_response', {'player_id': player_id})
 
     @requires_join
-    def handle_quit(self, payload):
+    def handle_quit(self, _):
         """
         Handle the quit command.
         """

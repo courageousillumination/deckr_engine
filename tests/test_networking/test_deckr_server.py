@@ -12,6 +12,7 @@ from tests.settings import SIMPLE_GAME
 
 
 class DeckrServerTestCase(TestCase):
+
     """
     The base class for the deckrserver test cases. Builds a game master with
     a single game and creates the server connected to that game master.
@@ -62,10 +63,10 @@ class DeckrServerTestCase(TestCase):
 
 
 class DeckrServerGameTestCase(DeckrServerTestCase):
+
     """
     Test commands specifically related to games.
     """
-
 
     def setUp(self):
         super(DeckrServerGameTestCase, self).setUp()
@@ -122,7 +123,6 @@ class DeckrServerGameTestCase(DeckrServerTestCase):
         self.get_response()
         self.run_command('quit')
         self.get_response('quit_response')
-
 
 
 class DeckrServerGameManagmentTestCase(DeckrServerTestCase):
