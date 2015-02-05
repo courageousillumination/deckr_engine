@@ -1,0 +1,3 @@
+"""
+The main deckr module.
+"""

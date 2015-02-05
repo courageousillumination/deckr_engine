@@ -1,3 +1,7 @@
+"""
+Tests around the DeckrServer.
+"""
+
 import json
 from unittest import TestCase
 
@@ -8,6 +12,7 @@ from tests.settings import SIMPLE_GAME
 
 
 class DeckrServerTestCase(TestCase):
+
     """
     Contains integration tests for the deckr server. Although this won't spin
     up a whole network stack, it will build a game master in the background.
@@ -51,7 +56,6 @@ class DeckrServerTestCase(TestCase):
 
         error = self.get_response('error')
         self.assertEqual(error['message'], expected_error_message)
-
 
     def test_list(self):
         """

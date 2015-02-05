@@ -1,0 +1,3 @@
+"""
+Deckr tests.
+"""
