@@ -27,6 +27,19 @@ def requires_arguments(arguments):
         return inner
     return wrapper
 
+def requires_join(func):
+    """
+    Can be put on a handler to indicate that it must be joined to a game before
+    running.
+    """
+
+    def inner(self, payload):
+        if self.game is None:
+            self.send_error("You aren't connected to a game")
+            return
+        return func(self, payload)
+    return inner
+
 
 class DeckrProtocol(Protocol):
 
@@ -36,6 +49,7 @@ class DeckrProtocol(Protocol):
 
     def __init__(self, factory):
         self.factory = factory
+        self.game = None
         self.game_master = factory.game_master
 
     def send(self, message_type, data):
@@ -68,12 +82,10 @@ class DeckrProtocol(Protocol):
             self.send_error("Malformed message: missing message_type")
 
         message_type = payload['message_type']
-        if message_type == 'create':
-            self.handle_create(payload)
-        elif message_type == 'list':
-            self.handle_list(payload)
-        elif message_type == 'destroy':
-            self.handle_destroy(payload)
+        try:
+            getattr(self, 'handle_' + message_type)(payload)
+        except AttributeError:
+            self.send_error("Invalid message type: %s" % payload['message_type'])
 
     def handle_list(self, _):
         """
@@ -110,6 +122,43 @@ class DeckrProtocol(Protocol):
             self.send_error("No game with id %s" % payload['game_id'])
             return
         self.send('destroy_response', {'game_id': payload['game_id']})
+
+    @requires_arguments(['game_id'])
+    def handle_join(self, payload):
+        """
+        Handle the join command.
+        """
+
+        # Make sure we're not already connected to a game
+        if self.game is not None:
+            self.send_error("You are already connected to game")
+            return
+
+        # Get the game
+        try:
+            game = self.game_master.get_game(payload['game_id'])
+        except KeyError:
+            self.send_error("No game with id %s" % payload['game_id'])
+            return
+
+        # Either add a player or join as spectator
+        if 'player_id' in payload:
+            player_id = 1
+        else:
+            player_id = None
+
+        # Everything is ok, actually connect to the game and send a response.
+        self.game = game
+        self.send('join_response', {'player_id': player_id})
+
+    @requires_join
+    def handle_quit(self, payload):
+        """
+        Handle the quit command.
+        """
+
+        self.game = None
+        self.send('quit_response', {})
 
 
 class DeckrFactory(Factory):

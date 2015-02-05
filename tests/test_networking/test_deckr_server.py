@@ -12,10 +12,9 @@ from tests.settings import SIMPLE_GAME
 
 
 class DeckrServerTestCase(TestCase):
-
     """
-    Contains integration tests for the deckr server. Although this won't spin
-    up a whole network stack, it will build a game master in the background.
+    The base class for the deckrserver test cases. Builds a game master with
+    a single game and creates the server connected to that game master.
     """
 
     def setUp(self):
@@ -43,7 +42,11 @@ class DeckrServerTestCase(TestCase):
         """
 
         value = self.transport.value()
-        data = json.loads(value)
+        try:
+            data = json.loads(value)
+        except ValueError:
+            print value
+            self.fail()
         if expected_message_type is not None:
             self.assertEqual(expected_message_type, data['message_type'])
         self.transport.clear()
@@ -56,6 +59,78 @@ class DeckrServerTestCase(TestCase):
 
         error = self.get_response('error')
         self.assertEqual(error['message'], expected_error_message)
+
+
+class DeckrServerGameTestCase(DeckrServerTestCase):
+    """
+    Test commands specifically related to games.
+    """
+
+
+    def setUp(self):
+        super(DeckrServerGameTestCase, self).setUp()
+        self.run_command('create', game_type_id=self.simple_game_id)
+        self.game_id = self.get_response('create_response')['game_id']
+
+    def test_join(self):
+        """
+        Test the join command. This takes a game id that should be joined.
+        """
+
+        self.run_command('join')
+        self.assert_produces_error("Missing required argument: game_id")
+
+        self.run_command('join', game_id=-1)
+        self.assert_produces_error("No game with id -1")
+
+        # Join as spectator
+        self.run_command('join', game_id=self.game_id)
+        response = self.get_response('join_response')
+        self.assertEqual(response['player_id'], None)
+
+        # You can't join a game if you've already connected to a game.
+        self.run_command('join', game_id=self.game_id)
+        self.assert_produces_error("You are already connected to game")
+
+        self.run_command('quit')
+        self.get_response()
+
+        # Join as a new player
+        self.run_command('join', game_id=self.game_id, player_id=None)
+        response = self.get_response('join_response')
+        self.assertIsNotNone(response['player_id'])
+        player_id = response['player_id']
+
+        self.run_command('quit')
+        self.get_response()
+
+        # Join as an existing player
+        self.run_command('join', game_id=self.game_id, player_id=player_id)
+        response = self.get_response('join_response')
+        self.assertEqual(response['player_id'], player_id)
+
+    def test_quit(self):
+        """
+        Test the quit command.
+        """
+
+        self.run_command('quit')
+        self.assert_produces_error("You aren't connected to a game")
+
+        # Make sure we actually get a quit response
+        self.run_command('join', game_id=self.game_id)
+        self.get_response()
+        self.run_command('quit')
+        self.get_response('quit_response')
+
+
+
+class DeckrServerGameManagmentTestCase(DeckrServerTestCase):
+
+    """
+    Contains tests for the deckr server game managment commands. These commands
+    are list, create, and destroy.
+    """
 
     def test_list(self):
         """

@@ -23,7 +23,6 @@ seeing all the games a server can provide, creating a new game, destroying a
 game, etc.
 
 * list: List all of the games currently available on the server.
-    * Additional Data: None
 * create: Create a new game.
     * game_type_id: The game type to be created.
 * destroy
@@ -40,9 +39,15 @@ Game commands
 -------------
 These commands are for interacting with a specific game.
 
-* join
-* leave
-* quit
+* join: Join a game.
+    * game_id: The id of the game to be joined
+    * player_id (optional): The player to join as. If present but null will
+      create a new player. If not present will join as a spectator.
+* join_response: Indicates that the player has joined the game.
+    * player_id: The id of the player that is being joined as. null if joined
+      as a spectator.
+* quit: Quit from the game you are connected to.
+* quit_response: Indicate that a player has successfully quit their game.
 * game_state
 * start
 * action

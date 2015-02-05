@@ -31,7 +31,7 @@ class GameMaster(object):
         """
 
         _ = self.game_types[game_type_id]
-        self.games[self.game_id] = None
+        self.games[self.game_id] = _
         self.game_id += 1
         return self.game_id - 1
 
@@ -49,3 +49,10 @@ class GameMaster(object):
         """
 
         return self.game_types.items()
+
+    def get_game(self, game_id):
+        """
+        Get the game for a specific id.
+        """
+
+        return self.games[game_id]
