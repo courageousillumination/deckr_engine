@@ -30,6 +30,7 @@ def modify_times():
                      for filename in filenames]
     return {file: os.path.getmtime(file) for file in watched_files}
 
+
 def watcher(p):
     """
     Watch all of the files in the deckr directory. If any changes are detected
@@ -40,11 +41,16 @@ def watcher(p):
     last_modify = modify_times()
 
     while True:
-        time.sleep(1)
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            logging.info("Caught a keyboard interrupt, shutting down")
+            sys.exit(0)
         if modify_times() != last_modify:
             logging.info("Detected a file change, reloading...\n\n")
             p.send_signal(signal.SIGQUIT)
             break
+
 
 def run_with_live_reloader():
     """
@@ -65,13 +71,22 @@ def run_with_live_reloader():
         try:
             p.wait()
         except KeyboardInterrupt:
-            p.kill() # Make sure we properly clean up.
+            p.kill()  # Make sure we properly clean up.
             return
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the deckr game master server.")
-    parser.add_argument('--log', dest='loglevel', help="Set the log level of the server")
-    parser.add_argument('--noreload', action='store_false', dest='reload', help="Disable automatic reloading of the server")
+    parser = argparse.ArgumentParser(description="Run the deckr server.")
+    parser.add_argument('--log',
+                        dest='loglevel',
+                        help="Set the log level of the server")
+    parser.add_argument('--noreload',
+                        action='store_false',
+                        dest='reload',
+                        help="Disable automatic reloading of the server")
+    parser.add_argument('--port',
+                        type=int,
+                        default=9000,
+                        help="The port that the server should bind to")
     args = parser.parse_args()
 
     # Set up proper logging
@@ -89,14 +104,17 @@ if __name__ == "__main__":
     if args.reload == True:
         logging.info("Running with live reloading")
         run_with_live_reloader()
-        sys.exit(0) # Should never be reached
+        sys.exit(0)  # Should never be reached
 
-    logging.info("Starting game master server with log level %s", log_level)
+    logging.info("Starting game master server with log level %s on port %d",
+                 log_level, args.port)
     # Set up the twisted logger
     observer = log.PythonLoggingObserver()
     observer.start()
 
     # Pass off to the game master server
-    # endpoints.serverFromString(reactor, "tcp:9000").listen(DeckrFactory()) # Bind to TCP
-    # endpoints.serverFromString(reactor, r"sockjs:tcp\:9001").listen(DeckrFactory()) # Bind to SockJS
+    target = endpoints.serverFromString(reactor, "tcp:%d" % args.port)
+    target.listen(DeckrFactory())  # Bind to TCP
+    # endpoints.serverFromString(reactor,
+    # r"sockjs:tcp\:9001").listen(DeckrFactory()) # Bind to SockJS
     reactor.run()

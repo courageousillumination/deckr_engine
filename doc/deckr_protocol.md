@@ -51,7 +51,8 @@ These commands are for interacting with a specific game.
 * game_state: Request the game state.
 * game_state_response: Indicate that the client should set its game state
     * game_state: A list of all items it the game and their attributes.
-* start
+* start: Start the game. Is also used to indicate to a client that the game has
+         started.
 * action
 * game_over
 * update

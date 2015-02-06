@@ -162,7 +162,10 @@ class DeckrProtocol(LineReceiver):
 
         # Either add a player or join as spectator
         if 'player_id' in payload:
-            player_id = 1
+            if payload['player_id'] is None:
+                player_id = game.add_player().game_id
+            else:
+                player_id = payload['player_id']
         else:
             player_id = None
 
