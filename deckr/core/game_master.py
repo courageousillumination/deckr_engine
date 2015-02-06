@@ -2,11 +2,16 @@
 This file contains code for the game master.
 """
 
+from deckr.core.game_definition import GameDefinition
+
 
 class GameMaster(object):
 
     """
-    The deckr game master.
+    The GameMaster provides game managment and a central point for all deckr
+    games. This class offers a list of games that it supports, and interfaces
+    to create and destory games. It will store a dictionary of all games that
+    this master manages.
     """
 
     def __init__(self):
@@ -20,7 +25,9 @@ class GameMaster(object):
         Register a game with this game master.
         """
 
-        self.game_types[self.game_type_id] = game_path
+        game_definition = GameDefinition()
+        game_definition.load(game_path)
+        self.game_types[self.game_type_id] = game_definition
         self.game_type_id += 1
         return self.game_type_id - 1
 
@@ -48,7 +55,7 @@ class GameMaster(object):
         List all the game types.
         """
 
-        return self.game_types.items()
+        return [(key, self.game_types[key].name) for key in self.game_types]
 
     def get_game(self, game_id):
         """

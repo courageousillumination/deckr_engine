@@ -1,0 +1,4 @@
+---
+name: 'Simple Game'
+game_file: 'simple_game'
+game_class: 'SimpleGame'

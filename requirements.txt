@@ -1,1 +1,3 @@
 Twisted==15.0.0
+txsockjs==1.2.2
+PyYAML==3.11

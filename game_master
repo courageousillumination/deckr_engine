@@ -97,5 +97,6 @@ if __name__ == "__main__":
     observer.start()
 
     # Pass off to the game master server
-    endpoints.serverFromString(reactor, "tcp:9000").listen(DeckrFactory())
+    # endpoints.serverFromString(reactor, "tcp:9000").listen(DeckrFactory()) # Bind to TCP
+    # endpoints.serverFromString(reactor, r"sockjs:tcp\:9001").listen(DeckrFactory()) # Bind to SockJS
     reactor.run()
