@@ -3,8 +3,10 @@ This module contains the code for running the deckr server.
 """
 
 import json
+import logging
 
-from twisted.internet.protocol import Factory, Protocol
+from twisted.internet.protocol import Factory
+from twisted.protocols.basic import LineReceiver
 
 from deckr.core.game_master import GameMaster
 
@@ -42,7 +44,7 @@ def requires_join(func):
     return inner
 
 
-class DeckrProtocol(Protocol):
+class DeckrProtocol(LineReceiver):
 
     """
     A simple protocol for the Deckr server.
@@ -69,18 +71,22 @@ class DeckrProtocol(Protocol):
 
         self.send('error', {'message': message})
 
-    def dataReceived(self, data):
+    def lineReceived(self, data):
         """
         Process a single message. Mostly passes off to handler functions.
         """
+
+        logging.debug("Recived a message %s", data)
 
         try:
             payload = json.loads(data)
         except ValueError:
             self.send_error("Malformed message: Could not decode JSON")
+            return
 
         if 'message_type' not in payload:
             self.send_error("Malformed message: missing message_type")
+            return
 
         message_type = payload['message_type']
         try:

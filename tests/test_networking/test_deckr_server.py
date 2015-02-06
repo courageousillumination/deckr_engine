@@ -34,7 +34,7 @@ class DeckrServerTestCase(TestCase):
         """
         kwargs['message_type'] = message_type
         payload = json.dumps(kwargs)
-        self.protocol.dataReceived(payload + '\r\n')
+        self.protocol.lineReceived(payload)
 
     def get_response(self, expected_message_type=None):
         """

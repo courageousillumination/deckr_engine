@@ -13,6 +13,11 @@ import sys
 import threading
 import time
 
+from twisted.internet import endpoints, reactor
+from twisted.python import log
+
+from deckr.networking.deckr_server import DeckrFactory
+
 
 def modify_times():
     """
@@ -37,7 +42,7 @@ def watcher(p):
     while True:
         time.sleep(1)
         if modify_times() != last_modify:
-            logging.info("Detected a file change, reloading...")
+            logging.info("Detected a file change, reloading...\n\n")
             p.send_signal(signal.SIGQUIT)
             break
 
@@ -71,12 +76,14 @@ if __name__ == "__main__":
 
     # Set up proper logging
     if args.loglevel is not None:
-        numeric_level = getattr(logging, args.loglevel.upper(), None)
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % args.loglevel)
-        logging.basicConfig(level=numeric_level)
+        log_level = args.loglevel.upper()
+    else:
+        log_level = 'WARNING'
 
-    logging.info("Starting game master server with log level %s", args.loglevel.upper())
+    numeric_level = getattr(logging, log_level, None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % args.loglevel)
+    logging.basicConfig(level=numeric_level)
 
     # Check for automatic reloading
     if args.reload == True:
@@ -84,6 +91,11 @@ if __name__ == "__main__":
         run_with_live_reloader()
         sys.exit(0) # Should never be reached
 
+    logging.info("Starting game master server with log level %s", log_level)
+    # Set up the twisted logger
+    observer = log.PythonLoggingObserver()
+    observer.start()
+
     # Pass off to the game master server
-    while True:
-        pass
+    endpoints.serverFromString(reactor, "tcp:9000").listen(DeckrFactory())
+    reactor.run()
