@@ -48,9 +48,10 @@ These commands are for interacting with a specific game.
       as a spectator.
 * quit: Quit from the game you are connected to.
 * quit_response: Indicate that a player has successfully quit their game.
-* game_state
+* game_state: Request the game state.
+* game_state_response: Indicate that the client should set its game state
+    * game_state: A list of all items it the game and their attributes.
 * start
 * action
-* game_state_response
 * game_over
 * update

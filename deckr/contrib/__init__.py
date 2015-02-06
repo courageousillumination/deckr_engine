@@ -1,4 +1,3 @@
 """
 Basic extensions for deckr.
 """
-

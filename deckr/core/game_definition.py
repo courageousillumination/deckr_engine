@@ -9,6 +9,7 @@ import yaml
 
 
 class GameDefinition(object):
+
     """
     A game definition includes all the core information for a game.
     """

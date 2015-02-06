@@ -64,6 +64,16 @@ class DeckrProtocol(LineReceiver):
         payload['message_type'] = message_type
         self.transport.write(json.dumps(payload) + '\r\n')
 
+    def broadcast_to_room(self, message_type, data):
+        """
+        Broadcast a message to the room (assumes the room exists)
+        """
+        payload = {key: value for key, value in data.items()}
+        payload['message_type'] = message_type
+        payload = json.dumps(payload) + '\r\n'
+        for connection in self.factory.game_rooms[self.game.game_id]:
+            connection.transport.write(payload)
+
     def send_error(self, message):
         """
         Send an error with the given message.
@@ -158,6 +168,7 @@ class DeckrProtocol(LineReceiver):
 
         # Everything is ok, actually connect to the game and send a response.
         self.game = game
+        self.factory.game_rooms.setdefault(payload['game_id'], []).append(self)
         self.send('join_response', {'player_id': player_id})
 
     @requires_join
@@ -166,8 +177,28 @@ class DeckrProtocol(LineReceiver):
         Handle the quit command.
         """
 
+        self.factory.game_rooms[self.game.game_id].remove(self)
+        if self.factory.game_rooms[self.game.game_id] == []:
+            del self.factory.game_rooms[self.game.game_id]
         self.game = None
         self.send('quit_response', {})
+
+    @requires_join
+    def handle_game_state(self, _):
+        """
+        Handle the game_state command.
+        """
+
+        self.send('game_state_response', {'game_state': []})
+
+    @requires_join
+    def handle_start(self, _):
+        """
+        Handle the start command. Should notify the room that the game has
+        started.
+        """
+
+        self.broadcast_to_room('start', {})
 
 
 class DeckrFactory(Factory):
@@ -178,6 +209,7 @@ class DeckrFactory(Factory):
 
     def __init__(self):
         self.game_master = GameMaster()
+        self.game_rooms = {}
 
     def buildProtocol(self, addr):
         """

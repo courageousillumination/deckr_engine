@@ -19,30 +19,35 @@ class DeckrServerTestCase(TestCase):
     """
 
     def setUp(self):
-        factory = DeckrFactory()
+        self.factory = DeckrFactory()
         # Set up the game master
-        self.game_master = factory.game_master
+        self.game_master = self.factory.game_master
         self.simple_game_id = self.game_master.register(SIMPLE_GAME)
         # Set up the server with a string transport
-        self.protocol = factory.buildProtocol(('127.0.0.1', 0))
+        self.protocol = self.factory.buildProtocol(('127.0.0.1', 0))
         self.transport = proto_helpers.StringTransport()
         self.protocol.makeConnection(self.transport)
 
-    def run_command(self, message_type, **kwargs):
+    def run_command(self, message_type, protocol=None, **kwargs):
         """
         A utility function to run commands with specified parameters.
         """
         kwargs['message_type'] = message_type
         payload = json.dumps(kwargs)
-        self.protocol.lineReceived(payload)
+        if protocol is None:
+            self.protocol.lineReceived(payload)
+        else:
+            protocol.lineReceived(payload)
 
-    def get_response(self, expected_message_type=None):
+    def get_response(self, expected_message_type=None, transport=None):
         """
         Get a decoded response out of the string transport. Returns the decoded
         dictonary.
         """
 
-        value = self.transport.value()
+        if transport is None:
+            transport = self.transport
+        value = transport.value()
         try:
             data = json.loads(value)
         except ValueError:
@@ -50,7 +55,7 @@ class DeckrServerTestCase(TestCase):
             self.fail()
         if expected_message_type is not None:
             self.assertEqual(expected_message_type, data['message_type'])
-        self.transport.clear()
+        transport.clear()
         return data
 
     def assert_produces_error(self, expected_error_message=None):
@@ -124,6 +129,39 @@ class DeckrServerGameTestCase(DeckrServerTestCase):
         self.run_command('quit')
         self.get_response('quit_response')
 
+    def test_request_game_state(self):
+        """
+        Test the request game state function.
+        """
+
+        self.run_command('join', game_id=self.game_id)
+        self.get_response()
+
+        self.run_command('game_state')
+        response = self.get_response('game_state_response')
+        self.assertIn('game_state', response)
+
+    def test_start(self):
+        """
+        Test the start command.
+        """
+
+        # Build another protocl
+        other_protocol = self.factory.buildProtocol(('127.0.0.1', 0))
+        other_transport = proto_helpers.StringTransport()
+        other_protocol.makeConnection(other_transport)
+
+        # Join with both
+        self.run_command('join', game_id=self.game_id)
+        self.run_command('join', game_id=self.game_id, protocol=other_protocol)
+        self.get_response()
+        self.get_response(transport=other_transport)
+
+        self.run_command('start')
+        # We expect both to get a start message.
+        self.get_response('start')
+        self.get_response('start', transport=other_transport)
+
 
 class DeckrServerGameManagmentTestCase(DeckrServerTestCase):
 
@@ -161,8 +199,8 @@ class DeckrServerGameManagmentTestCase(DeckrServerTestCase):
 
     def test_destroy(self):
         """
-        Test the destroy command. This can be run at any time and requires exatly
-        one argument (game_id).
+        Test the destroy command. This can be run at any time and requires
+        exactly one argument (game_id).
         """
 
         # Create a game
