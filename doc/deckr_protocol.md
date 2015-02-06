@@ -16,6 +16,16 @@ General
 * error: Used for a catch all error message.
     * message: A human readable message that describes the problem that was encountered.
 
+Management Commands
+-------------------
+The deckr server will have a special set of management commands. These allow
+you to modify the state of the server. These should generally only run locally.
+
+* authenticate: Authenticate this session with the server
+    * secret_key: The secret key you want to authenticate with.
+* register_game: Register a new game definition
+    * game_definition_path: The path to the game definition.
+
 Game Management
 ---------------
 These are commands for managing games. This includes functionality such as

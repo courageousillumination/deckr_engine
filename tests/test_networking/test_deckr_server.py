@@ -3,7 +3,7 @@ Tests around the DeckrServer.
 """
 
 import json
-from unittest import TestCase
+from unittest import skip, TestCase
 
 from twisted.test import proto_helpers
 
@@ -66,6 +66,30 @@ class DeckrServerTestCase(TestCase):
         error = self.get_response('error')
         self.assertEqual(error['message'], expected_error_message)
 
+@skip
+class DeckrServerManagmentTestCase(DeckrServerTestCase):
+    """
+    Test the server managment commands.
+    """
+
+    def seUp(self):
+        super(DeckrServerManagmentTestCase, self).setUp()
+        self.factory.secret_key = 'foobar'
+        self.send_command('authenticate', secret_key='foobar')
+        self.get_response()
+
+    def test_register_game(self):
+        """
+        Make sure we can register a game properly.
+        """
+
+        self.send_command('register_game', game_definition_path=SIMPLE_GAME)
+        response = self.get_response('game_registered')
+        self.assertIsNotNone(response['game_definition_id'])
+
+        self.run_command('list')
+        game_types = self.get_response('list_response')['game_types']
+        self.assertEqual(len(game_types), 2)
 
 class DeckrServerGameTestCase(DeckrServerTestCase):
 
