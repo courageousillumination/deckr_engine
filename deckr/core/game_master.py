@@ -37,8 +37,8 @@ class GameMaster(object):
         the game id of the newly created game.
         """
 
-        _ = self.game_types[game_type_id]
-        self.games[self.game_id] = _
+        game = self.game_types[game_type_id].create_instance()
+        self.games[self.game_id] = game
         self.game_id += 1
         return self.game_id - 1
 

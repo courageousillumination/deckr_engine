@@ -42,3 +42,10 @@ class GameDefinition(object):
 
         # Load other useful attributes
         self.name = self.config.get('name', 'Unnamed Game')
+
+    def create_instance(self):
+        """
+        Create a game using this game definition.
+        """
+
+        return self.klass()

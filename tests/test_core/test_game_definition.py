@@ -33,3 +33,12 @@ class GameDefinitionTestCase(TestCase):
         """
 
         self.assertRaises(ValueError, self.game_definition.load, BAD_GAME)
+
+    def test_create_instance(self):
+        """
+        Make sure we can create an instance.
+        """
+
+        self.game_definition.load(SIMPLE_GAME)
+        self.assertTrue(isinstance(self.game_definition.create_instance(),
+                                   Game))
