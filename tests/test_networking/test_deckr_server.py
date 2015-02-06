@@ -178,3 +178,20 @@ class DeckrServerGameManagmentTestCase(DeckrServerTestCase):
 
         self.run_command('destroy')
         self.assert_produces_error("Missing required argument: game_id")
+
+    def test_malformed_messages(self):
+        """
+        Make sure that we can properly handle several different types of
+        malformed message.
+        """
+
+        self.run_command('foobar')
+        self.assert_produces_error("Invalid message type: foobar")
+
+        # Send something that isn't even json.
+        self.protocol.lineReceived("foobar")
+        self.assert_produces_error("Malformed message: Could not decode JSON")
+
+        # Send something that is json but without a message type
+        self.protocol.lineReceived('{"foo": "bar"}')
+        self.assert_produces_error("Malformed message: missing message_type")
