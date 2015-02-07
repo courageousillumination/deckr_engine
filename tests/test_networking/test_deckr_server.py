@@ -3,7 +3,7 @@ Tests around the DeckrServer.
 """
 
 import json
-from unittest import skip, TestCase
+from unittest import TestCase
 
 from twisted.test import proto_helpers
 
@@ -19,10 +19,10 @@ class DeckrServerTestCase(TestCase):
     """
 
     def setUp(self):
-        self.factory = DeckrFactory()
+        self.factory = DeckrFactory({'games': [SIMPLE_GAME]})
         # Set up the game master
         self.game_master = self.factory.game_master
-        self.simple_game_id = self.game_master.register(SIMPLE_GAME)
+        self.simple_game_id = self.game_master.game_type_id - 1 # TODO: Fix.
         # Set up the server with a string transport
         self.protocol = self.factory.buildProtocol(('127.0.0.1', 0))
         self.transport = proto_helpers.StringTransport()
@@ -48,10 +48,10 @@ class DeckrServerTestCase(TestCase):
         if transport is None:
             transport = self.transport
         value = transport.value()
+        print value
         try:
             data = json.loads(value)
         except ValueError:
-            print value
             self.fail()
         if expected_message_type is not None:
             self.assertEqual(expected_message_type, data['message_type'])
@@ -66,7 +66,6 @@ class DeckrServerTestCase(TestCase):
         error = self.get_response('error')
         self.assertEqual(error['message'], expected_error_message)
 
-@skip
 class DeckrServerManagmentTestCase(DeckrServerTestCase):
     """
     Test the server managment commands.
@@ -74,17 +73,19 @@ class DeckrServerManagmentTestCase(DeckrServerTestCase):
 
     def seUp(self):
         super(DeckrServerManagmentTestCase, self).setUp()
-        self.factory.secret_key = 'foobar'
-        self.send_command('authenticate', secret_key='foobar')
-        self.get_response()
+
 
     def test_register_game(self):
         """
         Make sure we can register a game properly.
         """
 
-        self.send_command('register_game', game_definition_path=SIMPLE_GAME)
-        response = self.get_response('game_registered')
+        self.factory.secret_key = 'foobar'
+        self.run_command('authenticate', secret_key='foobar')
+        self.get_response('authenticated')
+
+        self.run_command('register_game', game_definition_path=SIMPLE_GAME)
+        response = self.get_response('register_game_response')
         self.assertIsNotNone(response['game_definition_id'])
 
         self.run_command('list')

@@ -43,6 +43,19 @@ def requires_join(func):
         return func(self, payload)
     return inner
 
+def requires_authenticated(func):
+    """
+    Can be put on a handler to indicate that it must be authenticated (mainly
+    used for managment commands).
+    """
+
+    def inner(self, payload):
+        if not self.authenticated:
+            self.send_error("You aren't authenticated")
+            return
+        return func(self, payload)
+    return inner
+
 
 class DeckrProtocol(LineReceiver):
 
@@ -53,6 +66,7 @@ class DeckrProtocol(LineReceiver):
     def __init__(self, factory):
         self.factory = factory
         self.game = None
+        self.authenticated = False
         self.game_master = factory.game_master
 
     def send(self, message_type, data):
@@ -105,7 +119,33 @@ class DeckrProtocol(LineReceiver):
             self.send_error(
                 "Invalid message type: %s" %
                 payload['message_type'])
+    # Server managment commands
+    @requires_arguments(['secret_key'])
+    def handle_authenticate(self, payload):
+        """
+        Handle the authenticate command.
+        """
 
+        print self.factory
+        if payload['secret_key'] == self.factory.secret_key:
+            self.authenticated = True
+            self.send('authenticated', {})
+        else:
+            self.send_error("Invalid secret key")
+
+    @requires_authenticated
+    @requires_arguments(["game_definition_path"])
+    def handle_register_game(self, payload):
+        """
+        Handle the register command.
+        """
+
+        def_id = self.game_master.register(payload['game_definition_path'])
+        logging.info("Registering a new game located at %s",
+                     payload['game_definition_path'])
+        self.send('register_game_response', {'game_definition_id': def_id})
+
+    # Game managment commands
     def handle_list(self, _):
         """
         Handle a list command. Mainly returns the list from the game_master.
@@ -210,9 +250,13 @@ class DeckrFactory(Factory):
     The persistent backend for Deckr.
     """
 
-    def __init__(self):
+    def __init__(self, config):
         self.game_master = GameMaster()
         self.game_rooms = {}
+        self.secret_key = None
+
+        for game in config['games']:
+            self.game_master.register(game)
 
     def buildProtocol(self, addr):
         """

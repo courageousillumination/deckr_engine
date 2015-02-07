@@ -2,6 +2,8 @@
 This file contains code for the game master.
 """
 
+import logging
+
 from deckr.core.game_definition import GameDefinition
 
 
@@ -25,6 +27,7 @@ class GameMaster(object):
         Register a game with this game master.
         """
 
+        logging.info("Registering game %s", game_path)
         game_definition = GameDefinition()
         game_definition.load(game_path)
         self.game_types[self.game_type_id] = game_definition

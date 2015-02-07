@@ -16,6 +16,7 @@ import time
 from twisted.internet import endpoints, reactor
 from twisted.python import log
 
+import yaml
 from deckr.networking.deckr_server import DeckrFactory
 
 
@@ -87,6 +88,9 @@ if __name__ == "__main__":
                         type=int,
                         default=9000,
                         help="The port that the server should bind to")
+    parser.add_argument('--config',
+                        default='game_master_config.yml',
+                        help="The configuration file for this game master.")
     args = parser.parse_args()
 
     # Set up proper logging
@@ -100,6 +104,14 @@ if __name__ == "__main__":
         raise ValueError('Invalid log level: %s' % args.loglevel)
     logging.basicConfig(level=numeric_level)
 
+    # Make sure the configuration file exists
+    # (this needs to happen before livereloading)
+    try:
+        config_file = open(args.config)
+    except OSError:
+        logging.critical("Can not read config file %s", args.config)
+
+    configuration = yaml.load(config_file)
     # Check for automatic reloading
     if args.reload == True:
         logging.info("Running with live reloading")
@@ -114,7 +126,7 @@ if __name__ == "__main__":
 
     # Pass off to the game master server
     target = endpoints.serverFromString(reactor, "tcp:%d" % args.port)
-    target.listen(DeckrFactory())  # Bind to TCP
+    target.listen(DeckrFactory(configuration))  # Bind to TCP
     # endpoints.serverFromString(reactor,
     # r"sockjs:tcp\:9001").listen(DeckrFactory()) # Bind to SockJS
     reactor.run()
