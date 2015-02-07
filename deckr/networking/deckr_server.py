@@ -43,6 +43,7 @@ def requires_join(func):
         return func(self, payload)
     return inner
 
+
 def requires_authenticated(func):
     """
     Can be put on a handler to indicate that it must be authenticated (mainly
@@ -120,6 +121,7 @@ class DeckrProtocol(LineReceiver):
                 "Invalid message type: %s" %
                 payload['message_type'])
     # Server managment commands
+
     @requires_arguments(['secret_key'])
     def handle_authenticate(self, payload):
         """

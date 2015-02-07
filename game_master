@@ -91,6 +91,10 @@ if __name__ == "__main__":
     parser.add_argument('--config',
                         default='game_master_config.yml',
                         help="The configuration file for this game master.")
+    parser.add_argument('--websockets',
+                        default=False,
+                        action='store_true',
+                        help="If set the server will use websockets.")
     args = parser.parse_args()
 
     # Set up proper logging
@@ -125,8 +129,11 @@ if __name__ == "__main__":
     observer.start()
 
     # Pass off to the game master server
-    target = endpoints.serverFromString(reactor, "tcp:%d" % args.port)
-    target.listen(DeckrFactory(configuration))  # Bind to TCP
-    # endpoints.serverFromString(reactor,
-    # r"sockjs:tcp\:9001").listen(DeckrFactory()) # Bind to SockJS
+    if args.websockets:
+        target = endpoints.serverFromString(reactor,
+                                            r"sockjs:tcp\:%d" % args.port)
+    else:
+        target = endpoints.serverFromString(reactor, "tcp:%d" % args.port)
+
+    target.listen(DeckrFactory(configuration))
     reactor.run()

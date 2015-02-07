@@ -22,7 +22,7 @@ class DeckrServerTestCase(TestCase):
         self.factory = DeckrFactory({'games': [SIMPLE_GAME]})
         # Set up the game master
         self.game_master = self.factory.game_master
-        self.simple_game_id = self.game_master.game_type_id - 1 # TODO: Fix.
+        self.simple_game_id = self.game_master.game_type_id - 1  # TODO: Fix.
         # Set up the server with a string transport
         self.protocol = self.factory.buildProtocol(('127.0.0.1', 0))
         self.transport = proto_helpers.StringTransport()
@@ -66,23 +66,23 @@ class DeckrServerTestCase(TestCase):
         error = self.get_response('error')
         self.assertEqual(error['message'], expected_error_message)
 
+
 class DeckrServerManagmentTestCase(DeckrServerTestCase):
+
     """
     Test the server managment commands.
     """
 
-    def seUp(self):
+    def setUp(self):
         super(DeckrServerManagmentTestCase, self).setUp()
-
+        self.factory.secret_key = 'foobar'
+        self.run_command('authenticate', secret_key='foobar')
+        self.get_response('authenticated')
 
     def test_register_game(self):
         """
         Make sure we can register a game properly.
         """
-
-        self.factory.secret_key = 'foobar'
-        self.run_command('authenticate', secret_key='foobar')
-        self.get_response('authenticated')
 
         self.run_command('register_game', game_definition_path=SIMPLE_GAME)
         response = self.get_response('register_game_response')
@@ -91,6 +91,7 @@ class DeckrServerManagmentTestCase(DeckrServerTestCase):
         self.run_command('list')
         game_types = self.get_response('list_response')['game_types']
         self.assertEqual(len(game_types), 2)
+
 
 class DeckrServerGameTestCase(DeckrServerTestCase):
 
