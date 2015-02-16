@@ -41,7 +41,8 @@ game, etc.
     * game_types: A list of game_types. Each game_type is a tuple of
       (human_readable_name, server_id)
 * create_response: Indicates that a create was successful.
-    * game_id: The game_id of the newly created game
+    * game_id: The game_id of the newly created game.
+    * game_type_id: The type that was created.
 * destroy_response: Indicates that a game was successfully destroyed.
     * game_id: The game_id of the game that was destroyed.
 

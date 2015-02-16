@@ -169,7 +169,9 @@ class DeckrProtocol(LineReceiver):
                 "No game type with id %s" %
                 payload['game_type_id'])
             return
-        self.send('create_response', {'game_id': game_id})
+        self.send('create_response',
+                  {'game_id': game_id,
+                   'game_type_id': payload['game_type_id']})
 
     @requires_arguments(['game_id'])
     def handle_destroy(self, payload):
