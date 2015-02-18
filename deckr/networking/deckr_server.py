@@ -68,6 +68,7 @@ class DeckrProtocol(LineReceiver):
         self.factory = factory
         self.game = None
         self.authenticated = False
+        self.player = None
         self.game_master = factory.game_master
 
     def send(self, message_type, data):
@@ -86,7 +87,7 @@ class DeckrProtocol(LineReceiver):
         payload = {key: value for key, value in data.items()}
         payload['message_type'] = message_type
         payload = json.dumps(payload) + '\r\n'
-        for connection in self.factory.game_rooms[self.game.game_id]:
+        for connection in self.factory.game_rooms[self.game.master_game_id]:
             connection.transport.write(payload)
 
     def send_error(self, message):
@@ -115,11 +116,14 @@ class DeckrProtocol(LineReceiver):
 
         message_type = payload['message_type']
         try:
-            getattr(self, 'handle_' + message_type)(payload)
+            func = getattr(self, 'handle_' + message_type)
         except AttributeError:
             self.send_error(
                 "Invalid message type: %s" %
                 payload['message_type'])
+            return
+        func(payload) # Run the actual command
+
     # Server managment commands
 
     @requires_arguments(['secret_key'])
@@ -207,9 +211,10 @@ class DeckrProtocol(LineReceiver):
         # Either add a player or join as spectator
         if 'player_id' in payload:
             if payload['player_id'] is None:
-                player_id = game.add_player().game_id
+                self.player = game.add_player()
             else:
-                player_id = payload['player_id']
+                self.player = game.get_object(payload['player_id'])
+            player_id = self.player.game_id
         else:
             player_id = None
 
@@ -224,9 +229,9 @@ class DeckrProtocol(LineReceiver):
         Handle the quit command.
         """
 
-        self.factory.game_rooms[self.game.game_id].remove(self)
-        if self.factory.game_rooms[self.game.game_id] == []:
-            del self.factory.game_rooms[self.game.game_id]
+        self.factory.game_rooms[self.game.master_game_id].remove(self)
+        if self.factory.game_rooms[self.game.master_game_id] == []:
+            del self.factory.game_rooms[self.game.master_game_id]
         self.game = None
         self.send('quit_response', {})
 
@@ -236,7 +241,8 @@ class DeckrProtocol(LineReceiver):
         Handle the game_state command.
         """
 
-        self.send('game_state_response', {'game_state': []})
+        self.send('game_state_response',
+                  {'game_state': self.game.get_state(self.player)})
 
     @requires_join
     def handle_start(self, _):
@@ -245,6 +251,7 @@ class DeckrProtocol(LineReceiver):
         started.
         """
 
+        self.game.set_up()
         self.broadcast_to_room('start', {})
 
 

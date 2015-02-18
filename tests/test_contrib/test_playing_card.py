@@ -20,7 +20,7 @@ class UtilityTestCase(TestCase):
 
         deck = create_deck()
         self.assertEqual(len(deck), 52)
-        for i in range(13):
+        for i in range(1, 14):
             for suit in SUITS:
                 self.assertIn(PlayingCard(i, suit), deck)
 

@@ -42,9 +42,9 @@ class GameMaster(object):
 
         game = self.game_types[game_type_id].create_instance()
         self.games[self.game_id] = game
-        game.game_id = self.game_id
+        game.master_game_id = self.game_id
         self.game_id += 1
-        return game.game_id
+        return self.game_id - 1
 
     def destroy(self, game_id):
         """
