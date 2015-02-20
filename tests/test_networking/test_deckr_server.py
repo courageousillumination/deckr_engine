@@ -103,6 +103,7 @@ class DeckrServerGameTestCase(DeckrServerTestCase):
         super(DeckrServerGameTestCase, self).setUp()
         self.run_command('create', game_type_id=self.simple_game_id)
         self.game_id = self.get_response('create_response')['game_id']
+        self.game = self.game_master.get_game(self.game_id)
 
     def test_join(self):
         """
@@ -187,6 +188,55 @@ class DeckrServerGameTestCase(DeckrServerTestCase):
         # We expect both to get a start message.
         self.get_response('start')
         self.get_response('start', transport=other_transport)
+
+    def test_action(self):
+        """
+        Test the action command.
+        """
+
+        self.run_command('join', game_id=self.game_id)
+        self.get_response()
+
+        self.run_command('action', action='test_action')
+        self.assertTrue(self.game.ran_test_action)
+
+        # Test invalid action names
+        self.run_command('action', action='invalid_action')
+        self.assert_produces_error("Invalid action invalid_action")
+
+    def test_action_with_arguments(self):
+        """
+        Make sure that we get the proper paramter translation.
+        """
+
+        self.run_command('join', game_id=self.game_id)
+        self.get_response()
+
+        self.run_command('action', action='test_parameter_action', game_object=0)
+        self.assertEqual(self.game.test_parameter, self.game.get_object(0))
+
+    def test_action_with_update(self):
+        """
+        Make sure that when we make an action we get the proper updates.
+        """
+
+        self.run_command('join', game_id=self.game_id, player_id=None)
+        self.get_response()
+        self.run_command('start')
+        self.get_response()
+
+        self.run_command('action', action='test_update_action')
+        response = self.get_response('update')
+        expected = {
+                    'update_type': 'set',
+                    'game_object': self.game.game_object.game_id,
+                    'field': 'foo',
+                    'value': 'bar'
+                    }
+        for key, value in expected.items():
+            self.assertIn(key, response)
+            self.assertEqual(response[key], value)
+
 
 
 class DeckrServerGameManagmentTestCase(DeckrServerTestCase):

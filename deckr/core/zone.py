@@ -27,9 +27,9 @@ class Zone(GameObject):
 
         self._zone.append(obj)
         if self.game is not None:
-            self.game.add_transition({'transition_type': 'add',
-                                      'target_zone': self.game_id,
-                                      'object': obj.game_id})
+            self.game.add_transition({'update_type': 'add',
+                                      'zone': self.game_id,
+                                      'game_object': obj.game_id})
 
     def pop(self):
         """
@@ -43,9 +43,9 @@ class Zone(GameObject):
             return None
 
         if self.game is not None:
-            self.game.add_transition({'transition_type': 'remove',
-                                      'target_zone': self.game_id,
-                                      'object': obj.game_id})
+            self.game.add_transition({'update_type': 'remove',
+                                      'zone': self.game_id,
+                                      'game_object': obj.game_id})
         return obj
 
     def add(self, obj):
@@ -66,9 +66,9 @@ class Zone(GameObject):
             return
 
         if self.game is not None:
-            self.game.add_transition({'transition_type': 'remove',
-                                      'target_zone': self.game_id,
-                                      'object': obj.game_id})
+            self.game.add_transition({'update_type': 'remove',
+                                      'zone': self.game_id,
+                                      'game_object': obj.game_id})
 
     def set(self, objs):
         """

@@ -57,6 +57,17 @@ def requires_authenticated(func):
         return func(self, payload)
     return inner
 
+def handle_argument_conversion(game, arg_types, arguments):
+    """
+    Convert a list of arguments into game objects as specified by
+    arg_types. arguments should be a dictionary of key value pairs
+    and arg_types should be a dictionary of keys to game object classes.
+    """
+
+    for arg in arg_types:
+        arguments[arg] = game.get_object(int(arguments[arg]), arg_types[arg])
+    return arguments
+
 
 class DeckrProtocol(LineReceiver):
 
@@ -132,7 +143,6 @@ class DeckrProtocol(LineReceiver):
         Handle the authenticate command.
         """
 
-        print self.factory
         if payload['secret_key'] == self.factory.secret_key:
             self.authenticated = True
             self.send('authenticated', {})
@@ -253,6 +263,47 @@ class DeckrProtocol(LineReceiver):
 
         self.game.set_up()
         self.broadcast_to_room('start', {})
+
+    @requires_arguments(['action'])
+    @requires_join
+    def handle_action(self, payload):
+        """
+        Handle game actions. All arguments will be passed off to the game.
+        """
+
+        # Get rid of extra data
+        payload.pop('message_type')
+
+        # Get the action name
+        action = payload.pop('action')
+        # Find the function on the game
+        try:
+            action = getattr(self.game, action)
+        except AttributeError:
+            self.send_error("Invalid action %s" % action)
+            return
+
+        # Perform argument conversion
+        arguments = handle_argument_conversion(self.game, action.__annotations__, payload)
+        action(self.player, **arguments) # pylint: disable=star-args
+
+        self.process_updates()
+
+    def process_updates(self):
+        """
+        This will be called whenever something has happened in the game. It
+        will gather all of the state transitions off of the game and send
+        them out to the appropriate clients.
+        """
+
+        transitions = self.game.get_all_transitions()
+        for player, updates in transitions:
+            if player == self.player:
+                for update in updates:
+                    if update['update_type'] == 'set':
+                        update['game_object'] = update['game_object'].game_id
+                    self.send('update', update)
+        self.game.flush_all_transitions()
 
 
 class DeckrFactory(Factory):

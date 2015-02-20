@@ -196,23 +196,23 @@ class ZoneTestCase(TestCase):
 
         self.zone.push(self.game_object1)
         self.assertEqual(game.get_transitions(player),
-                         [{'transition_type': 'add',
-                           'object': self.game_object1.game_id,
-                           'target_zone': self.zone.game_id}])
+                         [{'update_type': 'add',
+                           'game_object': self.game_object1.game_id,
+                           'zone': self.zone.game_id}])
         game.flush_all_transitions()
 
         self.zone.add(self.game_object1)
         self.assertEqual(game.get_transitions(player),
-                         [{'transition_type': 'add',
-                           'object': self.game_object1.game_id,
-                           'target_zone': self.zone.game_id}])
+                         [{'update_type': 'add',
+                           'game_object': self.game_object1.game_id,
+                           'zone': self.zone.game_id}])
         game.flush_all_transitions()
 
         self.zone.set([self.game_object1])
         self.assertEqual(game.get_transitions(player),
-                         [{'transition_type': 'add',
-                           'object': self.game_object1.game_id,
-                           'target_zone': self.zone.game_id}])
+                         [{'update_type': 'add',
+                           'game_object': self.game_object1.game_id,
+                           'zone': self.zone.game_id}])
         game.flush_all_transitions()
 
         self.zone.set(
@@ -220,13 +220,13 @@ class ZoneTestCase(TestCase):
         game.flush_all_transitions()
         obj = self.zone.pop()
         self.assertEqual(game.get_transitions(player),
-                         [{'transition_type': 'remove',
-                           'object': obj.game_id,
-                           'target_zone': self.zone.game_id}])
+                         [{'update_type': 'remove',
+                           'game_object': obj.game_id,
+                           'zone': self.zone.game_id}])
         game.flush_all_transitions()
 
         self.zone.remove(self.game_object2)
         self.assertEqual(game.get_transitions(player),
-                         [{'transition_type': 'remove',
-                           'object': self.game_object2.game_id,
-                           'target_zone': self.zone.game_id}])
+                         [{'update_type': 'remove',
+                           'game_object': self.game_object2.game_id,
+                           'zone': self.zone.game_id}])

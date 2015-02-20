@@ -64,6 +64,19 @@ These commands are for interacting with a specific game.
     * game_state: A list of all items it the game and their attributes.
 * start: Start the game. Is also used to indicate to a client that the game has
          started.
-* action
+* action: Runs a specific action. Takes an number of additional arguments
+          which will be passed on to the underlying game in the form of keyword
+          arguments. The server will attempt to coerce these into game objects if
+          possible.
+* update: Indicates to the client that something has happened to the game state.
+          The default game provides a couple simple updates all of which are
+          specified by 'update_type'
+          * set: Sent when some value has changed on an object.
+            * game_object: The object that is being modified
+            * field: The name of the field that has been changed.
+            * value: The new value of the field
+          * add: Add the specified object to the zone (it is implicitly
+                 removed from the previous zone)
+            * game_object: The object to be added to the zone
+            * zone: The zone to be added
 * game_over
-* update

@@ -59,6 +59,11 @@ class GameObject(object):
         else:
             self.game_attributes[name] = value
 
+        # Register the change with my game.
+        if self.game is not None:
+            self.game.add_transition({"update_type": "set", "game_object": self,
+                                      "field": name, "value": value}, player)
+
     def get_game_attribute(self, name, player=None):
         """
         Gets a specific game attribute. Throws an AttributeError if the
