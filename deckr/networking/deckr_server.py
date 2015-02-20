@@ -81,6 +81,7 @@ class DeckrProtocol(LineReceiver):
         self.authenticated = False
         self.player = None
         self.game_master = factory.game_master
+        self.game_room = None
 
     def send(self, message_type, data):
         """
@@ -230,7 +231,8 @@ class DeckrProtocol(LineReceiver):
 
         # Everything is ok, actually connect to the game and send a response.
         self.game = game
-        self.factory.game_rooms.setdefault(payload['game_id'], []).append(self)
+        self.game_room = self.factory.game_rooms.setdefault(payload['game_id'], [])
+        self.game_room.append(self)
         self.send('join_response', {'player_id': player_id})
 
     @requires_join
@@ -297,14 +299,21 @@ class DeckrProtocol(LineReceiver):
         """
 
         transitions = self.game.get_all_transitions()
+        for client in self.game_room:
+            client.handle_updates(transitions)
+        self.game.flush_all_transitions()
+
+    def handle_updates(self, transitions):
+        """
+        Handle my updates.
+        """
+
         for player, updates in transitions:
             if player == self.player:
                 for update in updates:
                     if update['update_type'] == 'set':
                         update['game_object'] = update['game_object'].game_id
                     self.send('update', update)
-        self.game.flush_all_transitions()
-
 
 class DeckrFactory(Factory):
 
