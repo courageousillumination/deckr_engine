@@ -9,6 +9,7 @@ from twisted.internet.protocol import Factory
 from twisted.protocols.basic import LineReceiver
 
 from deckr.core.game_master import GameMaster
+from deckr.core.game_object import GameObject
 
 
 def requires_arguments(arguments):
@@ -65,7 +66,7 @@ def handle_argument_conversion(game, arg_types, arguments):
     """
 
     for arg in arg_types:
-        arguments[arg] = game.get_object(int(arguments[arg]), arg_types[arg])
+        arguments[arg] = game.get_object(arguments[arg], arg_types[arg])
     return arguments
 
 
@@ -90,6 +91,7 @@ class DeckrProtocol(LineReceiver):
 
         payload = {key: value for key, value in data.items()}
         payload['message_type'] = message_type
+        logging.debug("Sending %s", payload)
         self.transport.write(json.dumps(payload) + '\r\n')
 
     def broadcast_to_room(self, message_type, data):
@@ -264,6 +266,7 @@ class DeckrProtocol(LineReceiver):
         """
 
         self.game.set_up()
+        self.game.flush_all_transitions() # No need to keep these around
         self.broadcast_to_room('start', {})
 
     @requires_arguments(['action'])
@@ -287,7 +290,8 @@ class DeckrProtocol(LineReceiver):
 
         # Perform argument conversion
         arguments = handle_argument_conversion(self.game, action.__annotations__, payload)
-        action(self.player, **arguments) # pylint: disable=star-args
+        arguments['player'] = self.player
+        action(**arguments) # pylint: disable=star-args
 
         self.process_updates()
 
@@ -313,6 +317,8 @@ class DeckrProtocol(LineReceiver):
                 for update in updates:
                     if update['update_type'] == 'set':
                         update['game_object'] = update['game_object'].game_id
+                        if isinstance(update['value'], GameObject):
+                            update['value'] = update['value'].game_id
                     self.send('update', update)
 
 class DeckrFactory(Factory):
